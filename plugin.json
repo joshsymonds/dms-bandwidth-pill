@@ -1,0 +1,13 @@
+{
+	"id": "bandwidthPill",
+	"name": "Network Bandwidth",
+	"component": "BandwidthWidget.qml",
+	"capabilities": ["dankbar-widget"],
+	"category": "monitoring",
+	"repo": "https://github.com/joshsymonds/dms-bandwidth-pill",
+	"author": "Josh Symonds",
+	"description": "Instantaneous network throughput (RX/TX) for a chosen interface, read from /proc/net/dev. Vertical bar shows ↓ rate / ↑ rate stacked; horizontal bar shows them inline.",
+	"dependencies": [],
+	"compositors": ["any"],
+	"distro": ["any"]
+}
