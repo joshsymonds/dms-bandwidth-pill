@@ -106,7 +106,13 @@ PluginComponent {
         command: ["cat", "/proc/net/dev"]
         stdout: StdioCollector {
             onStreamFinished: {
-                const content = this.text;
+                // Plain `text` (not `this.text`) — QML scope resolves it
+                // to StdioCollector's text property. Going through `this`
+                // grabs the QObject method binding instead and yields a
+                // function reference rather than the collected string,
+                // which then crashes when downstream code calls .split()
+                // on it. Matches DMS's own DgopService usage.
+                const content = text;
                 if (!content)
                     return;
 
