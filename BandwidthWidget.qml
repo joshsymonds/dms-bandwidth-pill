@@ -107,15 +107,22 @@ PluginComponent {
         stdout: StdioCollector {
             id: collector
             onStreamFinished: {
-                // Access via explicit `id` rather than bare `text` or
-                // `this.text` — both of those resolved to a function in
-                // testing (possibly shadowed by an outer-scope `text`
-                // method on Process or its parent). `collector.text`
-                // unambiguously hits the StdioCollector property (a
-                // read-only QString per Quickshell.Io's qmltypes).
-                const content = collector.text;
-                if (!content)
+                // DEBUG: log what we're actually getting back. Earlier
+                // attempts (bare `text`, `this.text`, `collector.text`)
+                // all crashed with a function-not-string TypeError; need
+                // to see the actual type/shape of the property.
+                console.log("bandwidthPill: typeof collector.text =", typeof collector.text);
+                console.log("bandwidthPill: collector.text =", String(collector.text).substring(0, 100));
+
+                // Coerce defensively: if Quickshell exposes text as a
+                // function (FileView-style) call it; otherwise use as-is.
+                let raw = collector.text;
+                if (typeof raw === "function")
+                    raw = raw();
+                const procContent = String(raw);
+                if (!procContent)
                     return;
+                const content = procContent;
 
                 // Pick interface on first read OR if the previously-detected
                 // one has disappeared from the file (e.g. user yanked an
