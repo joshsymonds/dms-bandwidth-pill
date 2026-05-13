@@ -40,10 +40,10 @@ PluginComponent {
     // then return the first iface whose RX counter is non-zero. Stable
     // enough for desktops with one NIC; users with multiple actives
     // should set pluginData.interface explicitly.
-    function _selectInterface(content) {
+    function _selectInterface(procContent) {
         if (root.ifaceSetting !== "auto")
             return root.ifaceSetting;
-        const lines = content.split("\n");
+        const lines = procContent.split("\n");
         for (let i = 2; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line)
@@ -66,8 +66,8 @@ PluginComponent {
     // separated: rx_bytes rx_packets rx_errs rx_drop rx_fifo rx_frame
     // rx_compressed rx_multicast tx_bytes tx_packets ... — we want fields
     // 0 (rx) and 8 (tx).
-    function _parseStats(content, iface) {
-        const lines = content.split("\n");
+    function _parseStats(procContent, iface) {
+        const lines = procContent.split("\n");
         const prefix = iface + ":";
         for (let i = 2; i < lines.length; i++) {
             const line = lines[i].trim();
