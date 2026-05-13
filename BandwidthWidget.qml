@@ -171,40 +171,35 @@ PluginComponent {
         BasePill {
             id: pill
             content: Component {
-                Item {
-                    implicitWidth: pill.widgetThickness - pill.horizontalPadding * 2
-                    implicitHeight: col.implicitHeight
+                // Direct Column as content — Column is an Item subclass
+                // with the implicit-sizing semantics BasePill's
+                // visualHeight binding needs, no Item wrapper required.
+                // Wrapping in an Item with an `implicitHeight: col.h`
+                // binding was creating a sizing loop that collapsed the
+                // pill height — visible as the bottom rate value being
+                // clipped against the next widget below.
+                Column {
+                    spacing: 2
 
-                    Column {
-                        id: col
-                        // Centering only horizontally — anchors.centerIn:
-                        // parent creates a sizing loop with the Item's
-                        // `implicitHeight: col.implicitHeight` binding,
-                        // which collapses the pill height to ~0 when
-                        // there are more than two stacked children.
+                    DankIcon {
+                        name: "swap_vert"
+                        size: Theme.barIconSize(pill.barThickness, undefined, pill.barConfig ? pill.barConfig.maximizeWidgetIcons : false, pill.barConfig ? pill.barConfig.iconScale : 1.0)
+                        color: Theme.widgetIconColor
                         anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 1
+                    }
 
-                        DankIcon {
-                            name: "swap_vert"
-                            size: Theme.barIconSize(pill.barThickness, undefined, pill.barConfig ? pill.barConfig.maximizeWidgetIcons : false, pill.barConfig ? pill.barConfig.iconScale : 1.0)
-                            color: Theme.widgetIconColor
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
+                    StyledText {
+                        text: root._formatRate(root.rxRate)
+                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
+                        color: Theme.widgetTextColor
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
 
-                        StyledText {
-                            text: root._formatRate(root.rxRate)
-                            font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                            color: Theme.widgetTextColor
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
-
-                        StyledText {
-                            text: root._formatRate(root.txRate)
-                            font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                            color: Theme.widgetTextColor
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
+                    StyledText {
+                        text: root._formatRate(root.txRate)
+                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
+                        color: Theme.widgetTextColor
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
             }
