@@ -35,6 +35,10 @@ PluginComponent {
     property real txRate: 0
     property string detectedIface: ""
 
+    // DEBUG sanity check: confirm we're even reaching plugin load and
+    // that console.log goes somewhere visible in journalctl.
+    Component.onCompleted: console.log("bandwidthPill: COMPONENT LOADED")
+
     // Auto-pick the first interface that's actually moving traffic. We
     // skip the header rows (lines 0-1 of /proc/net/dev) and the loopback,
     // then return the first iface whose RX counter is non-zero. Stable
@@ -107,30 +111,48 @@ PluginComponent {
         stdout: StdioCollector {
             id: collector
             onStreamFinished: {
-                // DEBUG: log what we're actually getting back. Earlier
-                // attempts (bare `text`, `this.text`, `collector.text`)
-                // all crashed with a function-not-string TypeError; need
-                // to see the actual type/shape of the property.
+                console.log("bandwidthPill: onStreamFinished fired");
                 console.log("bandwidthPill: typeof collector.text =", typeof collector.text);
-                console.log("bandwidthPill: collector.text =", String(collector.text).substring(0, 100));
 
-                // Coerce defensively: if Quickshell exposes text as a
-                // function (FileView-style) call it; otherwise use as-is.
+                // Defensive: handle both possible APIs (string property
+                // or function returning string).
                 let raw = collector.text;
                 if (typeof raw === "function")
                     raw = raw();
                 const procContent = String(raw);
                 if (!procContent)
                     return;
-                const content = procContent;
 
-                // Pick interface on first read OR if the previously-detected
-                // one has disappeared from the file (e.g. user yanked an
-                // adapter); otherwise stick with what we picked so we don't
-                // flip-flop between two interfaces both carrying traffic.
+                // INLINE parsing — no function calls — so we can isolate
+                // whether the prior crashes were a scoping issue with
+                // function params or something else entirely.
+                const lines = procContent.split("\n");
                 let iface = root.detectedIface;
-                if (!iface || !content.includes(iface + ":"))
-                    iface = root._selectInterface(content);
+
+                // Re-detect interface if needed.
+                if (!iface || !procContent.includes(iface + ":")) {
+                    iface = "";
+                    if (root.ifaceSetting !== "auto") {
+                        iface = root.ifaceSetting;
+                    } else {
+                        for (let i = 2; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if (!line)
+                                continue;
+                            const colonIdx = line.indexOf(":");
+                            if (colonIdx < 0)
+                                continue;
+                            const candidate = line.substring(0, colonIdx).trim();
+                            if (candidate === "lo")
+                                continue;
+                            const f = line.substring(colonIdx + 1).trim().split(/\s+/);
+                            if (parseInt(f[0], 10) > 0) {
+                                iface = candidate;
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (!iface)
                     return;
                 if (root.detectedIface !== iface) {
@@ -138,14 +160,25 @@ PluginComponent {
                     root._rxBytesPrev = -1;
                     root._txBytesPrev = -1;
                 }
-                const stats = root._parseStats(content, iface);
+
+                // Parse stats for the chosen iface.
+                let stats = null;
+                const prefix = iface + ":";
+                for (let i = 2; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line.startsWith(prefix))
+                        continue;
+                    const f = line.substring(line.indexOf(":") + 1).trim().split(/\s+/);
+                    stats = {
+                        rx: parseInt(f[0], 10),
+                        tx: parseInt(f[8], 10)
+                    };
+                    break;
+                }
                 if (!stats)
                     return;
                 if (root._rxBytesPrev >= 0) {
                     const dt = root.intervalMs / 1000;
-                    // Max(0,…) guards against the counter wrapping to a
-                    // lower value, which shouldn't happen on 64-bit
-                    // kernels but costs nothing to defend against.
                     root.rxRate = Math.max(0, (stats.rx - root._rxBytesPrev) / dt);
                     root.txRate = Math.max(0, (stats.tx - root._txBytesPrev) / dt);
                 }
