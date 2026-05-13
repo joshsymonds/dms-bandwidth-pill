@@ -26,11 +26,13 @@ PluginComponent {
 
     // ── Settings (configurable via pluginData) ─────────────────────────
     property string ifaceSetting: (pluginData && pluginData.interface) ? pluginData.interface : "auto"
-    // Default 2s polling — 1s makes the rate values jitter visibly as
-    // bursts smear across read windows; 2s smooths perceived motion
-    // without losing responsiveness. Users who want snappier updates
-    // can drop this via pluginData.intervalMs.
-    property int intervalMs: (pluginData && pluginData.intervalMs) ? pluginData.intervalMs : 2000
+    // Default 5s polling — at 1-2s, network rate values jitter
+    // visibly because TCP bursts smear unevenly across read windows
+    // and the visual churn distracts from the value. 5s smooths the
+    // perceived motion to "approximately what's happening now"
+    // without losing usefulness for a glance widget. Override via
+    // pluginData.intervalMs if you want it snappier.
+    property int intervalMs: (pluginData && pluginData.intervalMs) ? pluginData.intervalMs : 5000
 
     // ── Live state ─────────────────────────────────────────────────────
     property real _rxBytesPrev: -1
