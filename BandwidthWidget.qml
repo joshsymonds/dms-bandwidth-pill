@@ -167,41 +167,37 @@ PluginComponent {
     // configurable fontScale they push the text past the 36px pill
     // width; we keep the pill clean and let a (future) popout show the
     // labeled version when the user hovers/clicks.
+    // Reference pattern from DMS-shipped ColorDemoPlugin and the
+    // dms-claudecode plugin: `verticalBarPill: Component { Column {...} }`
+    // directly — NO BasePill wrapper, NO outer Item. The bar's
+    // WidgetHost wraps the plugin's content in its own pill chrome;
+    // wrapping in BasePill on the plugin side double-wraps and the
+    // outer pill caps height to BasePill's hardcoded geometry, which
+    // assumes 2-row content. Returning a bare Column lets the pill
+    // grow to fit all three rows naturally.
     verticalBarPill: Component {
-        BasePill {
-            id: pill
-            content: Component {
-                // Direct Column as content — Column is an Item subclass
-                // with the implicit-sizing semantics BasePill's
-                // visualHeight binding needs, no Item wrapper required.
-                // Wrapping in an Item with an `implicitHeight: col.h`
-                // binding was creating a sizing loop that collapsed the
-                // pill height — visible as the bottom rate value being
-                // clipped against the next widget below.
-                Column {
-                    spacing: 2
+        Column {
+            spacing: Theme.spacingXS
 
-                    DankIcon {
-                        name: "swap_vert"
-                        size: Theme.barIconSize(pill.barThickness, undefined, pill.barConfig ? pill.barConfig.maximizeWidgetIcons : false, pill.barConfig ? pill.barConfig.iconScale : 1.0)
-                        color: Theme.widgetIconColor
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
+            DankIcon {
+                name: "swap_vert"
+                size: Theme.barIconSize(root.barThickness, undefined, root.barConfig ? root.barConfig.maximizeWidgetIcons : false, root.barConfig ? root.barConfig.iconScale : 1.0)
+                color: Theme.widgetIconColor
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
 
-                    StyledText {
-                        text: root._formatRate(root.rxRate)
-                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                        color: Theme.widgetTextColor
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
+            StyledText {
+                text: root._formatRate(root.rxRate)
+                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                color: Theme.widgetTextColor
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
 
-                    StyledText {
-                        text: root._formatRate(root.txRate)
-                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                        color: Theme.widgetTextColor
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                }
+            StyledText {
+                text: root._formatRate(root.txRate)
+                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                color: Theme.widgetTextColor
+                anchors.horizontalCenter: parent.horizontalCenter
             }
         }
     }
@@ -212,34 +208,28 @@ PluginComponent {
     //    [swap_vert] ↓ 2.3M  ↑ 0.8M
     // Same data as the vertical layout, more readable presentation.
     horizontalBarPill: Component {
-        BasePill {
-            id: pill
-            content: Component {
-                Row {
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingS
+        Row {
+            spacing: Theme.spacingS
 
-                    DankIcon {
-                        name: "swap_vert"
-                        size: Theme.barIconSize(pill.barThickness, undefined, pill.barConfig ? pill.barConfig.maximizeWidgetIcons : false, pill.barConfig ? pill.barConfig.iconScale : 1.0)
-                        color: Theme.widgetIconColor
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+            DankIcon {
+                name: "swap_vert"
+                size: Theme.barIconSize(root.barThickness, undefined, root.barConfig ? root.barConfig.maximizeWidgetIcons : false, root.barConfig ? root.barConfig.iconScale : 1.0)
+                color: Theme.widgetIconColor
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
-                    StyledText {
-                        text: "↓ " + root._formatRate(root.rxRate)
-                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                        color: Theme.widgetTextColor
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+            StyledText {
+                text: "↓ " + root._formatRate(root.rxRate)
+                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                color: Theme.widgetTextColor
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
-                    StyledText {
-                        text: "↑ " + root._formatRate(root.txRate)
-                        font.pixelSize: Theme.barTextSize(pill.barThickness, pill.barConfig ? pill.barConfig.fontScale : 1.0, pill.barConfig ? pill.barConfig.maximizeWidgetText : false)
-                        color: Theme.widgetTextColor
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
+            StyledText {
+                text: "↑ " + root._formatRate(root.txRate)
+                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                color: Theme.widgetTextColor
+                anchors.verticalCenter: parent.verticalCenter
             }
         }
     }
