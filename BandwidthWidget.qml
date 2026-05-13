@@ -26,7 +26,11 @@ PluginComponent {
 
     // ── Settings (configurable via pluginData) ─────────────────────────
     property string ifaceSetting: (pluginData && pluginData.interface) ? pluginData.interface : "auto"
-    property int intervalMs: (pluginData && pluginData.intervalMs) ? pluginData.intervalMs : 1000
+    // Default 2s polling — 1s makes the rate values jitter visibly as
+    // bursts smear across read windows; 2s smooths perceived motion
+    // without losing responsiveness. Users who want snappier updates
+    // can drop this via pluginData.intervalMs.
+    property int intervalMs: (pluginData && pluginData.intervalMs) ? pluginData.intervalMs : 2000
 
     // ── Live state ─────────────────────────────────────────────────────
     property real _rxBytesPrev: -1
@@ -173,7 +177,12 @@ PluginComponent {
 
                     Column {
                         id: col
-                        anchors.centerIn: parent
+                        // Centering only horizontally — anchors.centerIn:
+                        // parent creates a sizing loop with the Item's
+                        // `implicitHeight: col.implicitHeight` binding,
+                        // which collapses the pill height to ~0 when
+                        // there are more than two stacked children.
+                        anchors.horizontalCenter: parent.horizontalCenter
                         spacing: 1
 
                         DankIcon {
