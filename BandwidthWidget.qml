@@ -105,14 +105,15 @@ PluginComponent {
         id: procReader
         command: ["cat", "/proc/net/dev"]
         stdout: StdioCollector {
+            id: collector
             onStreamFinished: {
-                // Plain `text` (not `this.text`) — QML scope resolves it
-                // to StdioCollector's text property. Going through `this`
-                // grabs the QObject method binding instead and yields a
-                // function reference rather than the collected string,
-                // which then crashes when downstream code calls .split()
-                // on it. Matches DMS's own DgopService usage.
-                const content = text;
+                // Access via explicit `id` rather than bare `text` or
+                // `this.text` — both of those resolved to a function in
+                // testing (possibly shadowed by an outer-scope `text`
+                // method on Process or its parent). `collector.text`
+                // unambiguously hits the StdioCollector property (a
+                // read-only QString per Quickshell.Io's qmltypes).
+                const content = collector.text;
                 if (!content)
                     return;
 
