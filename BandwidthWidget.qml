@@ -35,57 +35,6 @@ PluginComponent {
     property real txRate: 0
     property string detectedIface: ""
 
-    // DEBUG sanity check: confirm we're even reaching plugin load and
-    // that console.log goes somewhere visible in journalctl.
-    Component.onCompleted: console.log("bandwidthPill: COMPONENT LOADED")
-
-    // Auto-pick the first interface that's actually moving traffic. We
-    // skip the header rows (lines 0-1 of /proc/net/dev) and the loopback,
-    // then return the first iface whose RX counter is non-zero. Stable
-    // enough for desktops with one NIC; users with multiple actives
-    // should set pluginData.interface explicitly.
-    function _selectInterface(procContent) {
-        if (root.ifaceSetting !== "auto")
-            return root.ifaceSetting;
-        const lines = procContent.split("\n");
-        for (let i = 2; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line)
-                continue;
-            const colonIdx = line.indexOf(":");
-            if (colonIdx < 0)
-                continue;
-            const iface = line.substring(0, colonIdx).trim();
-            if (iface === "lo")
-                continue;
-            const fields = line.substring(colonIdx + 1).trim().split(/\s+/);
-            const rx = parseInt(fields[0], 10);
-            if (rx > 0)
-                return iface;
-        }
-        return "";
-    }
-
-    // /proc/net/dev row format after the colon is positional whitespace-
-    // separated: rx_bytes rx_packets rx_errs rx_drop rx_fifo rx_frame
-    // rx_compressed rx_multicast tx_bytes tx_packets ... — we want fields
-    // 0 (rx) and 8 (tx).
-    function _parseStats(procContent, iface) {
-        const lines = procContent.split("\n");
-        const prefix = iface + ":";
-        for (let i = 2; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line.startsWith(prefix))
-                continue;
-            const fields = line.substring(line.indexOf(":") + 1).trim().split(/\s+/);
-            return {
-                rx: parseInt(fields[0], 10),
-                tx: parseInt(fields[8], 10)
-            };
-        }
-        return null;
-    }
-
     // Compact rate formatter: B/s under 1 KiB/s, K under 1 MiB/s, M
     // otherwise. One decimal place for K/M for readability without
     // jitter; no decimals for B (sub-KiB rates are visually noisy
@@ -111,11 +60,14 @@ PluginComponent {
         stdout: StdioCollector {
             id: collector
             onStreamFinished: {
-                console.log("bandwidthPill: onStreamFinished fired");
-                console.log("bandwidthPill: typeof collector.text =", typeof collector.text);
-
-                // Defensive: handle both possible APIs (string property
-                // or function returning string).
+                // Quickshell's StdioCollector exposes `text` as a QString
+                // property per its qmltypes, but DMS's older Quickshell
+                // build also has a `text()` method overload that the
+                // QML engine sometimes resolves to first when read via
+                // a bare or `this.`-prefixed identifier. Reading via the
+                // explicit `id` (collector.text) plus the defensive
+                // `typeof === "function"` check below covers both
+                // shapes; on this host the result lands as a string.
                 let raw = collector.text;
                 if (typeof raw === "function")
                     raw = raw();
