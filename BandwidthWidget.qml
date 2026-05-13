@@ -185,34 +185,25 @@ PluginComponent {
     // grow to fit all three rows naturally.
     verticalBarPill: Component {
         Column {
-            // Tight 2px spacing — the bar's right section is bottom-
-            // anchored and budget-constrained; pairing this with
-            // Theme.fontSizeSmall below brings the 3-row pill in line
-            // with the 2-row CpuMonitor/RamMonitor height profile so
-            // controlCenterButton still fits below us.
+            // 2-row pill with explicit ↓/↑ direction prefixes on each
+            // value — drops the swap_vert identity icon because the
+            // arrows themselves do the "this is bandwidth" labeling AND
+            // remove the ambiguity of "which row is up vs down". Earlier
+            // 3-row icon-over-bare-numbers design relied on convention
+            // (top=down) which is real but not obvious. Arrows + 4-char
+            // format ("↓21M") fit cleanly at Theme.fontSizeSmall (12px)
+            // inside the 36px pill width.
             spacing: 2
 
-            DankIcon {
-                name: "swap_vert"
-                size: Theme.iconSizeSmall
-                color: Theme.widgetIconColor
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
             StyledText {
-                // Theme.fontSizeSmall (12px) deliberately bypasses the
-                // bar's fontScale multiplier — at the user's larger
-                // bar fontScale, rate text like "132K" would overflow
-                // the pill width. Using the small font keeps it under
-                // 36px wide while staying readable.
-                text: root._formatRate(root.rxRate)
+                text: "↓ " + root._formatRate(root.rxRate)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
             StyledText {
-                text: root._formatRate(root.txRate)
+                text: "↑ " + root._formatRate(root.txRate)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter

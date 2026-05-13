@@ -7,16 +7,13 @@ no `bwm-ng` dependency.
 
 ## What it looks like
 
-On a vertical bar (DMS default), three stacked rows:
+On a vertical bar (DMS default), two stacked rows with explicit
+direction arrows so each value labels itself — no convention required:
 
 ```
-⇅       ← swap_vert (identity)
-2.3M    ← download rate (RX)
-0.8M    ← upload rate   (TX)
+↓ 2.3M    ← download rate (RX)
+↑ 0.8M    ← upload rate   (TX)
 ```
-
-Convention follows `ifstat` / `nload` / `iftop` / htop's network section:
-**top = download, bottom = upload**.
 
 On a horizontal bar there's room for explicit arrows:
 
