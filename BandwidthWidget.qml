@@ -100,13 +100,21 @@ PluginComponent {
         path: "/proc/net/dev"
         blockLoading: false
         onLoaded: {
+            // Quickshell's FileView exposes the loaded content via a
+            // `text()` method (NOT a `text` property). Calling
+            // `.split(...)` on the property reference yields a TypeError
+            // because we'd be operating on the function object itself.
+            // Capture once into a string so the parsing helpers below
+            // don't have to know about Quickshell's API shape.
+            const content = procView.text();
+
             // Pick interface on first read OR if the previously-detected
             // one has disappeared from the file (e.g. user yanked an
             // adapter); otherwise stick with what we picked so we don't
             // flip-flop between two interfaces both carrying traffic.
             let iface = root.detectedIface;
-            if (!iface || !text.includes(iface + ":"))
-                iface = root._selectInterface(text);
+            if (!iface || !content.includes(iface + ":"))
+                iface = root._selectInterface(content);
             if (!iface)
                 return;
             if (root.detectedIface !== iface) {
@@ -114,7 +122,7 @@ PluginComponent {
                 root._rxBytesPrev = -1;
                 root._txBytesPrev = -1;
             }
-            const stats = root._parseStats(text, iface);
+            const stats = root._parseStats(content, iface);
             if (!stats)
                 return;
             if (root._rxBytesPrev >= 0) {
