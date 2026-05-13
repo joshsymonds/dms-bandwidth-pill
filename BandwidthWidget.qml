@@ -180,8 +180,16 @@ PluginComponent {
             spacing: Theme.spacingXS
 
             DankIcon {
+                // Smaller-than-maximize identity icon: a 3-row pill has
+                // to share the bar's right-section vertical budget with
+                // cpuUsage + memUsage + controlCenterButton; using the
+                // full barIconSize (~22px under maximizeWidgetIcons)
+                // pushed total content above what fits and clipped the
+                // bottom text row. Theme.iconSizeSmall (16px) matches
+                // the text rows visually and brings total height in
+                // line with the 2-row CpuMonitor / RamMonitor pills.
                 name: "swap_vert"
-                size: Theme.barIconSize(root.barThickness, undefined, root.barConfig ? root.barConfig.maximizeWidgetIcons : false, root.barConfig ? root.barConfig.iconScale : 1.0)
+                size: Theme.iconSizeSmall
                 color: Theme.widgetIconColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
