@@ -185,25 +185,32 @@ PluginComponent {
     // grow to fit all three rows naturally.
     verticalBarPill: Component {
         Column {
-            // 2-row pill with explicit ↓/↑ direction prefixes on each
-            // value — drops the swap_vert identity icon because the
-            // arrows themselves do the "this is bandwidth" labeling AND
-            // remove the ambiguity of "which row is up vs down". Earlier
-            // 3-row icon-over-bare-numbers design relied on convention
-            // (top=down) which is real but not obvious. Arrows + 4-char
-            // format ("↓21M") fit cleanly at Theme.fontSizeSmall (12px)
-            // inside the 36px pill width.
+            // 3-row pill: swap_vert identity icon + two stacked rate
+            // values. TOP = upload (TX), BOTTOM = download (RX) —
+            // matching the intuitive "up = top, down = bottom" spatial
+            // mapping. (The ifstat/nload convention is the opposite —
+            // download on top — but with no explicit arrows on the
+            // values, "top = up" reads more naturally for most people.)
             spacing: 2
 
+            DankIcon {
+                name: "swap_vert"
+                size: Theme.iconSizeSmall
+                color: Theme.widgetIconColor
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
             StyledText {
-                text: "↓ " + root._formatRate(root.rxRate)
+                // Top row = TX (upload). Spatially "up" = top.
+                text: root._formatRate(root.txRate)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
             StyledText {
-                text: "↑ " + root._formatRate(root.txRate)
+                // Bottom row = RX (download). Spatially "down" = bottom.
+                text: root._formatRate(root.rxRate)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter

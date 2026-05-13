@@ -7,13 +7,18 @@ no `bwm-ng` dependency.
 
 ## What it looks like
 
-On a vertical bar (DMS default), two stacked rows with explicit
-direction arrows so each value labels itself — no convention required:
+On a vertical bar (DMS default), three stacked rows:
 
 ```
-↓ 2.3M    ← download rate (RX)
-↑ 0.8M    ← upload rate   (TX)
+⇅       ← swap_vert (identity)
+0.8M    ← upload rate (TX)    — top = up
+2.3M    ← download rate (RX)  — bottom = down
 ```
+
+Top-row = upload, bottom-row = download to match the intuitive
+spatial mapping of "↑ = up = top, ↓ = down = bottom". (This is the
+opposite of `ifstat`'s convention but the bar lays vertically, so
+spatial cues win over tool tradition.)
 
 On a horizontal bar there's room for explicit arrows:
 
