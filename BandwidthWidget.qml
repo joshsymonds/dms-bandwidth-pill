@@ -95,46 +95,49 @@ PluginComponent {
         return (bytesPerSec / (1024 * 1024)).toFixed(1) + "M";
     }
 
-    FileView {
-        id: procView
-        path: "/proc/net/dev"
-        blockLoading: false
-        onLoaded: {
-            // Quickshell's FileView exposes the loaded content via a
-            // `text()` method (NOT a `text` property). Calling
-            // `.split(...)` on the property reference yields a TypeError
-            // because we'd be operating on the function object itself.
-            // Capture once into a string so the parsing helpers below
-            // don't have to know about Quickshell's API shape.
-            const content = procView.text();
+    // We /could/ use a FileView here — but FileView's content access is
+    // subtly different from a plain string property (text() vs text in
+    // different versions, mtime-based reload heuristics that misbehave on
+    // /proc files whose mtime never changes, etc.). Process + StdioCollector
+    // is what DMS's own DgopService uses and it gives us a clean stdout
+    // string with no API ambiguity.
+    Process {
+        id: procReader
+        command: ["cat", "/proc/net/dev"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const content = this.text;
+                if (!content)
+                    return;
 
-            // Pick interface on first read OR if the previously-detected
-            // one has disappeared from the file (e.g. user yanked an
-            // adapter); otherwise stick with what we picked so we don't
-            // flip-flop between two interfaces both carrying traffic.
-            let iface = root.detectedIface;
-            if (!iface || !content.includes(iface + ":"))
-                iface = root._selectInterface(content);
-            if (!iface)
-                return;
-            if (root.detectedIface !== iface) {
-                root.detectedIface = iface;
-                root._rxBytesPrev = -1;
-                root._txBytesPrev = -1;
+                // Pick interface on first read OR if the previously-detected
+                // one has disappeared from the file (e.g. user yanked an
+                // adapter); otherwise stick with what we picked so we don't
+                // flip-flop between two interfaces both carrying traffic.
+                let iface = root.detectedIface;
+                if (!iface || !content.includes(iface + ":"))
+                    iface = root._selectInterface(content);
+                if (!iface)
+                    return;
+                if (root.detectedIface !== iface) {
+                    root.detectedIface = iface;
+                    root._rxBytesPrev = -1;
+                    root._txBytesPrev = -1;
+                }
+                const stats = root._parseStats(content, iface);
+                if (!stats)
+                    return;
+                if (root._rxBytesPrev >= 0) {
+                    const dt = root.intervalMs / 1000;
+                    // Max(0,…) guards against the counter wrapping to a
+                    // lower value, which shouldn't happen on 64-bit
+                    // kernels but costs nothing to defend against.
+                    root.rxRate = Math.max(0, (stats.rx - root._rxBytesPrev) / dt);
+                    root.txRate = Math.max(0, (stats.tx - root._txBytesPrev) / dt);
+                }
+                root._rxBytesPrev = stats.rx;
+                root._txBytesPrev = stats.tx;
             }
-            const stats = root._parseStats(content, iface);
-            if (!stats)
-                return;
-            if (root._rxBytesPrev >= 0) {
-                const dt = root.intervalMs / 1000;
-                // Max(0,…) guards against the counter wrapping to a lower
-                // value, which shouldn't happen on 64-bit kernels but
-                // costs nothing to defend against.
-                root.rxRate = Math.max(0, (stats.rx - root._rxBytesPrev) / dt);
-                root.txRate = Math.max(0, (stats.tx - root._txBytesPrev) / dt);
-            }
-            root._rxBytesPrev = stats.rx;
-            root._txBytesPrev = stats.tx;
         }
     }
 
@@ -143,7 +146,7 @@ PluginComponent {
         repeat: true
         running: true
         triggeredOnStart: true
-        onTriggered: procView.reload()
+        onTriggered: procReader.running = true
     }
 
     // ── Vertical bar pill ──────────────────────────────────────────────
