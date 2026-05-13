@@ -39,17 +39,23 @@ PluginComponent {
     property real txRate: 0
     property string detectedIface: ""
 
-    // Compact rate formatter: B/s under 1 KiB/s, K under 1 MiB/s, M
-    // otherwise. One decimal place for K/M for readability without
-    // jitter; no decimals for B (sub-KiB rates are visually noisy
-    // anyway). The icon next to the number conveys the unit, so we
-    // omit it from the text to save horizontal space in the pill.
+    // Compact rate formatter — at most 4 characters wide so the text
+    // doesn't overflow a 36-40px vertical pill at the bar's reduced
+    // font size. Decimal point only kept for single-digit magnitudes
+    // ("1.5K", "9.9M") where it adds useful precision; dropped for
+    // higher magnitudes ("132K", "1.5M") where the suffix is enough.
     function _formatRate(bytesPerSec) {
         if (bytesPerSec < 1024)
-            return bytesPerSec.toFixed(0);
-        if (bytesPerSec < 1024 * 1024)
-            return (bytesPerSec / 1024).toFixed(1) + "K";
-        return (bytesPerSec / (1024 * 1024)).toFixed(1) + "M";
+            return bytesPerSec.toFixed(0);          // "0".."999"
+        const k = bytesPerSec / 1024;
+        if (k < 10)
+            return k.toFixed(1) + "K";              // "1.0K".."9.9K"
+        if (k < 1024)
+            return Math.round(k) + "K";             // "10K".."1023K"
+        const m = k / 1024;
+        if (m < 10)
+            return m.toFixed(1) + "M";              // "1.0M".."9.9M"
+        return Math.round(m) + "M";                 // "10M"+
     }
 
     // We /could/ use a FileView here — but FileView's content access is
@@ -177,17 +183,14 @@ PluginComponent {
     // grow to fit all three rows naturally.
     verticalBarPill: Component {
         Column {
-            spacing: Theme.spacingXS
+            // Tight 2px spacing — the bar's right section is bottom-
+            // anchored and budget-constrained; pairing this with
+            // Theme.fontSizeSmall below brings the 3-row pill in line
+            // with the 2-row CpuMonitor/RamMonitor height profile so
+            // controlCenterButton still fits below us.
+            spacing: 2
 
             DankIcon {
-                // Smaller-than-maximize identity icon: a 3-row pill has
-                // to share the bar's right-section vertical budget with
-                // cpuUsage + memUsage + controlCenterButton; using the
-                // full barIconSize (~22px under maximizeWidgetIcons)
-                // pushed total content above what fits and clipped the
-                // bottom text row. Theme.iconSizeSmall (16px) matches
-                // the text rows visually and brings total height in
-                // line with the 2-row CpuMonitor / RamMonitor pills.
                 name: "swap_vert"
                 size: Theme.iconSizeSmall
                 color: Theme.widgetIconColor
@@ -195,15 +198,20 @@ PluginComponent {
             }
 
             StyledText {
+                // Theme.fontSizeSmall (12px) deliberately bypasses the
+                // bar's fontScale multiplier — at the user's larger
+                // bar fontScale, rate text like "132K" would overflow
+                // the pill width. Using the small font keeps it under
+                // 36px wide while staying readable.
                 text: root._formatRate(root.rxRate)
-                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
             StyledText {
                 text: root._formatRate(root.txRate)
-                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig ? root.barConfig.fontScale : 1.0, root.barConfig ? root.barConfig.maximizeWidgetText : false)
+                font.pixelSize: Theme.fontSizeSmall
                 color: Theme.widgetTextColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
